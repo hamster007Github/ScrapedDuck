@@ -3,7 +3,7 @@ const jsd = require('jsdom');
 const { JSDOM } = jsd;
 const https = require('https');
 
-function get()
+function get(backupFilePathRaids = "https://raw.githubusercontent.com/bigfoott/ScrapedDuck/data/raids.min.json")
 {
     return new Promise(resolve => {
         JSDOM.fromURL("https://leekduck.com/boss/", {
@@ -100,7 +100,7 @@ function get()
         }).catch(_err =>
             {
                 console.log(_err);
-                https.get("https://raw.githubusercontent.com/bigfoott/ScrapedDuck/data/raids.min.json", (res) =>
+                https.get(backupFilePathRaids, (res) =>
                 {
                     let body = "";
                     res.on("data", (chunk) => { body += chunk; });
