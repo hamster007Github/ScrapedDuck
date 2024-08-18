@@ -1,5 +1,6 @@
 const fs = require('fs');
 const https = require('https');
+const { argv } = require('node:process');
 
 const breakthrough = require('./pages/detailed/breakthrough')
 const spotlight = require('./pages/detailed/spotlight')
@@ -7,14 +8,16 @@ const communityday = require('./pages/detailed/communityday')
 const raidbattles = require('./pages/detailed/raidbattles')
 const generic = require('./pages/detailed/generic')
 
-function main()
+function main(backupFileBaseUrl = "https://raw.githubusercontent.com/bigfoott/ScrapedDuck/data/")
 {
+    console.log(`using backupFileBaseUrl: ${backupFileBaseUrl}`);
+
     if (!fs.existsSync('files/temp'))
         fs.mkdirSync('files/temp');
 
     var events = JSON.parse(fs.readFileSync("./files/events.min.json"));
 
-    https.get("https://raw.githubusercontent.com/bigfoott/ScrapedDuck/data/events.min.json", (res) =>
+    https.get(backupFileBaseUrl + "events.min.json", (res) =>
     {
         let body = "";
         res.on("data", (chunk) => { body += chunk; });
@@ -57,4 +60,5 @@ function main()
     });
 }
 
-main();
+const args = argv.slice(2);
+main(args[0]);
