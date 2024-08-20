@@ -2,7 +2,7 @@ name: Scrape LeekDuck
 
 on:
   schedule:
-    - cron: '0 * * * *'
+    - cron: '*/10 * * * *'
   workflow_dispatch:
 
 jobs:
@@ -10,47 +10,57 @@ jobs:
     name: Main Job
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-        with:
-            persist-credentials: false
-            fetch-depth: 0
 
-      - uses: actions/setup-node@v3
+      - name: Checkout default branch
+        uses: actions/checkout@v4
+        with:
+          path: main
+          persist-credentials: false
+
+      - name: Checkout data branch
+        uses: actions/checkout@v4
+        with:
+          ref: data
+          path: data
+
+      - uses: actions/setup-node@v4
         with:
           node-version: 14
 
       - name: Install dependencies
-        run: npm install
+        run: |
+          cd ./main
+          npm install
 
       - name: Run scrape.js
-        run: npm run scrape -- ${{ github.event.repository.html_url }}/data/
+        run: |
+          cd ./main
+          npm run scrape -- ${{ github.event.repository.html_url }}/data/
 
       - name: Run detailedscrape.js
-        run: npm run detailedscrape -- ${{ github.event.repository.html_url }}/data/
+        run: |
+          cd ./main
+          npm run detailedscrape -- ${{ github.event.repository.html_url }}/data/
 
       - name: Run combinedetails.js
-        run: npm run combinedetails
-
-      - name: Delete repo files
         run: |
-          mv files ..
-          rm -r .github
-          rm -r .gitignore
-          rm -rf *
-          cp -a ../files/. .
-          rm -r ../files
-  
-      - name: Commit
-        run: |
-          git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          git config --local user.name "github-actions[bot]"
-          git switch --orphan data
-          git add --all
-          git commit -m 'Data updated'
+          cd ./main
+          npm run combinedetails
 
-      - name: Push
-        uses: ad-m/github-push-action@v0.6.0
+      - name: Copy generated files to local data repo
+        run: |
+          cp -a -f ./main/files/. ./data/
+
+      #- name: create last_update.txt
+      #  run: |
+      #    cd ./data
+      #    touch last_update.txt && date > last_update.txt
+
+      - name: commit and push to data branch
+        uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          branch: data
-          force: true
+          commit_message: scheduled automated update
+          commit_author: github-actions[bot] <github-actions[bot]@users.noreply.github.com>
+          commit_user_name: github-actions[bot]
+          commit_user_email: github-actions[bot]@users.noreply.github.com
+          repository: ./data
